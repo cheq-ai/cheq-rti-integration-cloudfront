@@ -11,6 +11,9 @@ const rtiService = new RTIServiceNode();
 
 export const handle = async (event: CloudFrontRequestEvent): Promise<CloudFrontRequestResult> => {
     const cfRequest = event.Records[0].cf.request;
+    if (config.debug) {
+        console.log(`cfRequest: ${JSON.stringify(cfRequest)}`);
+    }
     try {
         const headersMap = getHeaders(cfRequest.headers);
         const reqUrl = getReqUrl(cfRequest, headersMap);
@@ -19,22 +22,30 @@ export const handle = async (event: CloudFrontRequestEvent): Promise<CloudFrontR
         }
 
         const startRTI = Date.now();
-        const rtiResponse = await rtiService.callRTI(
-            {
-                url: reqUrl.href,
-                headers: headersMap,
-                method: cfRequest.method,
-                ip: cfRequest.clientIp,
-                eventType: rtiCore.getEventType(reqUrl.pathname, cfRequest.method),
-                ja3: headersMap['cloudfront-viewer-ja3-fingerprint'],
-            },
-            config,
-        );
+        const payload = {
+            url: reqUrl.href,
+            headers: headersMap,
+            method: cfRequest.method,
+            ip: cfRequest.clientIp,
+            eventType: rtiCore.getEventType(reqUrl.pathname, cfRequest.method),
+            ja3: headersMap['cloudfront-viewer-ja3-fingerprint'],
+        };
+        if (config.debug) {
+            console.log(`payload: ${JSON.stringify(payload)}`);
+        }
+        const rtiResponse = await rtiService.callRTI(payload, config);
+        if (config.debug) {
+            console.log(`rtiResponse: ${JSON.stringify(rtiResponse)}`);
+        }
         const endRTI = Date.now();
         const duration = endRTI - startRTI;
-        await logger.info(`rti_duration: ${duration}`);
-
+        if (config.telemetry) {
+            await logger.info(`rti_duration: ${duration}`);
+        }
         const action = rtiCore.getAction(rtiResponse);
+        if (config.debug) {
+            console.log(`action: ${action}`);
+        }
         if (action === Action.CHALLENGE && config.challenge) {
             try {
                 const challengeResult = await config.challenge(cfRequest, rtiResponse);
@@ -74,7 +85,7 @@ export const handle = async (event: CloudFrontRequestEvent): Promise<CloudFrontR
 
 function getReqUrl(cfRequest: CloudFrontRequest, headers: HeadersMap): URL {
     const protocol = headers['cloudfront-viewer-tls'] ? 'https' : 'http';
-    const host = headers.host;
+    const host = headers['x-cheq-rti-host'] ?? headers.host;
     return new URL(cfRequest.uri, `${protocol}://${host}`);
 }
 
@@ -88,10 +99,13 @@ function getHeaders(headers: CloudFrontHeaders): HeadersMap {
 }
 
 function setHeaders(headers: CloudFrontHeaders, rtiResponse: RTIResponse): void {
-    setHeader(headers, 'x-cheq-rti-version', String(rtiResponse.version));
-    setHeader(headers, 'x-cheq-rti-is-invalid', String(rtiResponse.isInvalid));
-    setHeader(headers, 'x-cheq-rti-request-id', rtiResponse.requestId);
-    setHeader(headers, 'x-cheq-rti-threat-type-code', String(rtiResponse.threatTypeCode));
+    const result = [
+        `version=${rtiResponse.version}`,
+        `is-invalid=${rtiResponse.isInvalid}`,
+        `threat-type-code=${rtiResponse.threatTypeCode}`,
+        `request-id=${rtiResponse.requestId}`,
+    ].join(';');
+    setHeader(headers, 'x-cheq-rti-result', result);
     setHeader(headers, 'x-cheq-rti-set-cookie', rtiResponse.setCookie);
 }
 
