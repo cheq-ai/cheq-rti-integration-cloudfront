@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Template for cheq-rti-integration-cloudfront
+Outputs:
+  ViewerRequestVersionARN:
+    Description: Viewer Request lambda version ARN.
+    Value: !Ref ViewerRequest.Version
+  ViewerResponseVersionARN:
+    Description: Viewer Response lambda version ARN.
+    Value: !Ref ViewerResponse.Version
+  ViewerRequestOriginRequestPolicy:
+    Description: Viewer Request Origin Request Policy with ja3 fingerprint enabled
+    Value: !Sub "${AWS::StackName}-viewer-request-origin-request-policy"
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-role"
+      Policies:
+        - PolicyName: cloudwatch-logging
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - arn:aws:logs:*:*:*
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - edgelambda.amazonaws.com
+        Version: 2012-10-17
+  ViewerRequest:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-viewer-request"
+      AutoPublishAlias: live
+      CodeUri: lib/
+      Handler: viewer-request.handle
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      Timeout: 5
+      MemorySize: 128
+      Role: !GetAtt LambdaRole.Arn
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: false # Must be false since Lambda@Edge can not use environment variables
+        EntryPoints:
+          - viewer-request.ts
+  ViewerResponse:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-viewer-response"
+      AutoPublishAlias: live
+      CodeUri: lib/
+      Handler: viewer-response.handle
+      Runtime: nodejs18.x
+      Architectures:
+        - x86_64
+      Timeout: 5
+      MemorySize: 128
+      Role: !GetAtt LambdaRole.Arn
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: "es2020"
+        Sourcemap: false # Must be false since Lambda@Edge can not use environment variables
+        EntryPoints:
+          - viewer-response.ts
+  ViewerRequestOriginRequestPolicy:
+    Type: AWS::CloudFront::OriginRequestPolicy
+    Properties:
+      OriginRequestPolicyConfig:
+        Name: !Sub "${AWS::StackName}-viewer-request-origin-request-policy"
+        Comment: Includes all headers and enables ja3 fingerprint header
+        QueryStringsConfig:
+          QueryStringBehavior: all
+        CookiesConfig:
+          CookieBehavior: all
+        HeadersConfig:
+          HeaderBehavior: allViewerAndWhitelistCloudFront
+          Headers:
+            - cloudfront-viewer-ja3-fingerprint
+
