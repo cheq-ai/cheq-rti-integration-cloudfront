@@ -16,7 +16,7 @@ with [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/late
 ### Prerequisites:
 
 Modify the [configuration](https://cheq-ai.github.io/cheq-rti-integration-cloudfront/interfaces/CloudfrontConfig.html)
-at `lib/config.ts` to set your `apiKey` and `tagHash`
+at `lib/config.ts` to set your `apiKey` and `tagHash`.The API key and tag hash are available on the Paradome platform under “Settings -> RTI” and "Settings -> TAGS".
 
 ### Verify config
 
