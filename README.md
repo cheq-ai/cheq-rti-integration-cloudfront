@@ -1,3 +1,12 @@
+<div align="center">
+  <img src="https://raw.githubusercontent.com/cheq-ai/cheq-rti-integration-cloudfront/sam-cli-1-95-update/assets/cheq-logo.svg">
+</div>
+<br>
+
+![Integration Version](https://img.shields.io/github/v/release/cheq-ai/cheq-rti-integration-cloudfront?label=Integration%20Version)
+![Lambda Edge Runtime](https://img.shields.io/badge/Lambda%40Edge_Runtime-Node.js_18-green)
+![AWS SAM CLI](https://img.shields.io/badge/AWS_SAM_CLI-v1.95.0-9cf)
+
 # cheq-rti-integration-cloudfront
 
 This repository provides the components to invoke RTI from CloudFront.
