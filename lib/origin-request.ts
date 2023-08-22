@@ -18,6 +18,9 @@ export const handle = async (event: CloudFrontRequestEvent): Promise<CloudFrontR
         const headersMap = getHeaders(cfRequest.headers);
         const reqUrl = getReqUrl(cfRequest, headersMap);
         if (rtiCore.shouldIgnore(reqUrl.pathname)) {
+            if (config.debug) {
+                console.log(`ignoring: ${reqUrl.pathname}`);
+            }
             return cfRequest;
         }
 
