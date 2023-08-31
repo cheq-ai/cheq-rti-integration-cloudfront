@@ -1,8 +1,16 @@
+<div align="center">
+  <img src="https://raw.githubusercontent.com/cheq-ai/cheq-rti-integration-cloudfront/master/assets/cheq-logo.svg">
+</div>
+
 # cheq-rti-integration-cloudfront
 
-This repository provides the components to invoke RTI from CloudFront. 
+![Integration Version](https://img.shields.io/github/v/release/cheq-ai/cheq-rti-integration-cloudfront?label=Integration%20Version)
+![Lambda Edge Runtime](https://img.shields.io/badge/Lambda%40Edge_Runtime-Node.js_18-44cc11)
+![AWS SAM CLI](https://img.shields.io/badge/AWS_SAM_CLI-v1.95.0-44cc11)
 
-The provided CloudFront Origin Request and Origin Response Lambda@Edge functions invoke RTI and set response cookie. 
+This repository provides the components to invoke RTI from CloudFront.
+
+The provided CloudFront Origin Request and Origin Response Lambda@Edge functions invoke RTI and set response cookie.
 
 If you have an existing CloudFront distribution that uses caching we recommend that you create a second CloudFront distribution with caching disabled that invokes RTI and uses your existing distribution as the origin server.
 
@@ -16,7 +24,7 @@ with [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/late
 ### Prerequisites:
 
 Modify the [configuration](https://cheq-ai.github.io/cheq-rti-integration-cloudfront/interfaces/CloudfrontConfig.html)
-at `lib/config.ts` to set your `apiKey` and `tagHash`.The API key and tag hash are available on the Paradome platform under “Settings -> RTI” and "Settings -> TAGS".
+at `lib/config.ts` to set your `apiKey` and `tagHash`. The API key and tag hash are available in the Paradome platform under “Settings -> RTI” and "Settings -> TAGS".
 
 ### Verify config
 
@@ -38,8 +46,8 @@ sam local invoke OriginResponse -e events/origin-response-event.json
 
 ```bash
 sam build
-sam deploy # deploys the stack using the name defined in samconfig.toml
-sam deploy --parameter-overrides TrustedIPHeader=bar # includes origin request policies with trusted ip header
+sam deploy --region us-east-1 # deploys the stack using the name defined in samconfig.toml
+sam deploy --region us-east-1 --parameter-overrides TrustedIPHeader=bar # includes origin request policies with trusted ip header
 ```
 
 ### Output
@@ -76,8 +84,8 @@ Value               arn:aws:cloudfront::839097227002:function/cheq-rti-integrati
 - Use `OriginRequestVersionARN` for the CloudFront Origin Request Lambda@Edge
 - Use `OriginResponseVersionARN` for the CloudFront Origin Response Lambda@Edge
 - If your CloudFront origin expects the origin host and cannot resolve the distribution host:
-  - Use the `ViewerRequestARN` for the CloudFront Viewer Request CloudFront Function to set the x-cheq-rti-host header 
-  - Use the `OriginRequestPolicyNoHost` for the CloudFront Origin Request Policy 
+  - Use the `ViewerRequestARN` for the CloudFront Viewer Request CloudFront Function to set the x-cheq-rti-host header
+  - Use the `OriginRequestPolicyNoHost` for the CloudFront Origin Request Policy
 - If your origin supports the distribution host:
   - Use the `OriginRequestPolicy` for the CloudFront Origin Request Policy
 
